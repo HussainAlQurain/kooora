@@ -63,9 +63,14 @@ export class WebSocketService {
 
     try {
       // Use SockJS if available, otherwise fall back to native WebSocket
-      const wsUrl = process.env.NODE_ENV === 'development' 
-        ? 'ws://localhost:8080/ws' 
-        : `ws://${window.location.host}/api/ws`;
+      const backendBase = (typeof window !== 'undefined' && (window as any).BACKEND_URL)
+        || process.env.NEXT_PUBLIC_BACKEND_URL
+        || 'http://localhost:8080';
+
+      // Use HTTP base to construct WS endpoint safely
+      const httpUrl = new URL(backendBase);
+      const wsProtocol = httpUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${httpUrl.host}/ws`;
       
       this.ws = new WebSocket(wsUrl);
 

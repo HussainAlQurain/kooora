@@ -83,10 +83,10 @@ export default function PWAManager() {
       }
     }
 
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      registerServiceWorker()
-    }
+    // Register service worker - TEMPORARILY DISABLED to fix webpack issues
+    // if ('serviceWorker' in navigator) {
+    //   registerServiceWorker()
+    // }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)

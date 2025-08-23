@@ -329,13 +329,13 @@ export default function MatchesPage() {
                           {/* Home Team */}
                           <div className="flex items-center space-x-2 flex-1 justify-end">
                             <span className="font-medium text-gray-900 text-right">
-                              {match.homeTeam?.name ?? match.homeTeamName ?? 'Home'}
+                              {match.homeTeam?.name ?? 'Home'}
                             </span>
                             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                              {(match.homeTeam?.logoUrl || match.homeTeamLogo) ? (
+                              {match.homeTeam?.logoUrl ? (
                                 <img
-                                  src={match.homeTeam?.logoUrl || match.homeTeamLogo}
-                                  alt={`${match.homeTeam?.name ?? match.homeTeamName ?? 'Home'} logo`}
+                                  src={match.homeTeam.logoUrl}
+                                  alt={`${match.homeTeam?.name ?? 'Home'} logo`}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -361,10 +361,10 @@ export default function MatchesPage() {
                           {/* Away Team */}
                           <div className="flex items-center space-x-2 flex-1">
                             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                              {(match.awayTeam?.logoUrl || match.awayTeamLogo) ? (
+                              {match.awayTeam?.logoUrl ? (
                                 <img
-                                  src={match.awayTeam?.logoUrl || match.awayTeamLogo}
-                                  alt={`${match.awayTeam?.name ?? match.awayTeamName ?? 'Away'} logo`}
+                                  src={match.awayTeam.logoUrl}
+                                  alt={`${match.awayTeam?.name ?? 'Away'} logo`}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -372,7 +372,7 @@ export default function MatchesPage() {
                               )}
                             </div>
                             <span className="font-medium text-gray-900">
-                              {match.awayTeam?.name ?? match.awayTeamName ?? 'Away'}
+                              {match.awayTeam?.name ?? 'Away'}
                             </span>
                           </div>
                         </div>
@@ -380,7 +380,7 @@ export default function MatchesPage() {
                         {/* League and Venue */}
                         <div className="text-right min-w-32">
                           <div className="text-sm font-medium text-gray-700">
-                            {match.league?.name ?? match.leagueName ?? 'Unknown'}
+                            {match.league?.name ?? 'Unknown'}
                           </div>
                           {match.venue && (
                             <div className="text-xs text-gray-500">

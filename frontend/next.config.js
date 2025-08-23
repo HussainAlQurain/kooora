@@ -3,21 +3,15 @@ const nextConfig = {
   reactStrictMode: false, // Disable strict mode to avoid double rendering issues
   swcMinify: true,
   experimental: {
-    turbo: false, // Disable Turbopack to avoid webpack conflicts
+    // turbo: false, // Disable Turbopack to avoid webpack conflicts - removed as it's invalid
   },
-  webpack: (config, { dev, isServer }) => {
-    // Fix webpack module resolution issues
-    if (dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        moduleIds: 'named',
-      }
-    }
-    return config
+  // Expose backend URL to the client with a sane default for local runs
+  env: {
+    NEXT_PUBLIC_BACKEND_URL: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080',
   },
   async rewrites() {
-    // Use backend service name for Docker container communication
-    const apiUrl = process.env.NODE_ENV === 'production' ? 'http://backend:8080' : 'http://localhost:8080';
+    // Prefer explicit env; default to localhost when not in Docker
+    const apiUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
     
     return [
       {
