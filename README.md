@@ -129,6 +129,18 @@ kooora/
    ```
    Frontend will be available at `http://localhost:3000` or `http://localhost:3001`
 
+### 🔗 Backend URL configuration
+
+- Local (non‑Docker): create `frontend/.env.local` with:
+  ```bash
+  NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+  ```
+- Docker/deploy.sh: the app uses the service hostname `backend`. Ensure the environment contains:
+  ```bash
+  BACKEND_URL=http://backend:8080
+  ```
+The frontend proxies all `/api/*` and WebSocket traffic to this backend URL.
+
 ## 🌐 API Endpoints
 
 ### 📊 **Public Endpoints** (No Authentication Required)
@@ -201,6 +213,8 @@ GET /swagger-ui/index.html     # Swagger API Documentation
 GET /h2-console               # H2 Database Console (dev only)
 GET /actuator/health          # Application health status
 ```
+
+> If signup/login appears broken locally, verify JWT secret and CORS configuration; see the Authentication Fix Plan below.
 
 ## 🗄️ Database Schema
 
@@ -434,3 +448,53 @@ See **[TODO.md](./TODO.md)** for detailed roadmap with:
 **🏆 This is a fully functional, production-ready football application with a comprehensive roadmap for enterprise-level features!** ⚽
 
 *Visit [TODO.md](./TODO.md) to contribute to the next phase of development.*
+
+---
+
+## 🧭 Productization Roadmap (High‑level)
+
+To make the app production‑ready and useful for editors/admins:
+
+1. Authentication & RBAC hardening
+   - Stabilize signup/login, enforce BCrypt hashing, add refresh tokens, optional email verification
+   - Roles: ADMIN, EDITOR, VIEWER; route guards in frontend
+
+2. Data ingestion layer (APIs and scrapers)
+   - Pluggable Providers: External API provider(s) + HTML scraper provider(s)
+   - Normalization and ID‑mapping to internal entities
+   - Scheduling: Spring `@Scheduled` cron + manual runs from Admin UI
+   - Observability: run history, error logs, retries, rate‑limit/backoff
+
+3. Admin Source Manager (CMS)
+   - CRUD for Sources: name, type (API|Scraper), base URL, keys, enabled, frequency, last run
+   - League mapping UI: map competition IDs → internal leagues
+   - Actions: Run now, Pause, Purge cache, View logs
+
+4. Editorial tools
+   - Manual CRUD for leagues/teams/players/matches with audit log and moderation workflow
+   - Merge/dedupe conflicting records from multiple providers
+
+5. Realtime pipeline
+   - WebSocket push for status and score updates; Redis cache with invalidation
+
+6. Deployment & ops
+   - Docker Compose profiles (dev/prod), health checks, backups, alerts
+
+See the detailed task list in [TODO.md](./TODO.md).
+
+---
+
+## 🔒 Authentication Fix Plan (Immediate)
+
+Backend
+- Configure JWT secret/expiry via env; validate on startup
+- Ensure BCrypt hashing on signup; migrate legacy users if any
+- CORS: allow `http://localhost:3000` (dev), restrict in prod
+- Verify `/api/auth/login` returns `{ token, user }` with correct status codes
+
+Frontend
+- Persist JWT in `localStorage`; attach `Authorization: Bearer <token>` for protected APIs
+- Guard `/admin` and show clear error messages for auth failures
+
+Smoke tests
+- Seed or sign up an admin user, login from UI, access `/admin` and protected APIs

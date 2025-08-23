@@ -14,11 +14,15 @@
 ## 🎯 HIGH PRIORITY - Next Sprint
 
 ### 🔧 Backend Stability & Performance
-- [ ] **Fix Backend Startup Issues**
-  - [ ] Resolve `Table "MATCH_EVENTS" not found` error
-  - [ ] Fix authentication configuration issues
-  - [ ] Ensure all entity relationships work properly
-  - [ ] Add comprehensive error handling
+- [ ] **Authentication reliability**
+  - [ ] Configure JWT secret/expiry via env; fail fast if missing
+  - [ ] Enforce BCrypt hashing on signup; add migration for any legacy users
+  - [ ] Implement refresh tokens and token rotation
+  - [ ] Harden CORS (dev vs prod)
+- [ ] **Error handling & observability**
+  - [ ] Standardize error responses (problem+json)
+  - [ ] Add request logging and correlation IDs
+  - [ ] Expose metrics via `/actuator` and add dashboards
 
 ### 📊 Player Statistics System
 - [ ] **Re-implement Player Statistics**
@@ -30,11 +34,11 @@
 
 ### 🔄 Real-Time Features
 - [ ] **WebSocket Integration**
-  - [ ] Implement WebSocket for live match updates
-  - [ ] Add real-time notifications for goals/events
-  - [ ] Create live commentary system
-  - [ ] Add real-time chat for matches
-  - [ ] Implement push notifications
+  - [ ] Finalize WS endpoint `/ws` with STOMP destinations
+  - [ ] Redis pub/sub bridge for horizontal scalability
+  - [ ] Real-time events: goals, cards, substitutions, status changes
+  - [ ] Live commentary + chat topics per match
+  - [ ] Push notifications (later; gated behind PWA)
 
 ### ✅ Data Validation & Error Handling
 - [ ] **Comprehensive Form Validation**
@@ -58,11 +62,10 @@
 
 ### 📱 Mobile App Features
 - [ ] **Progressive Web App (PWA)**
-  - [ ] Add service worker for offline functionality
-  - [ ] Implement app-like experience on mobile
-  - [ ] Add push notifications support
-  - [ ] Create offline data caching
-  - [ ] Add "Add to Home Screen" functionality
+  - [ ] Re-enable service worker after caching bugs are fixed
+  - [ ] Offline cache strategies for public pages and assets
+  - [ ] Opt-in push notifications
+  - [ ] Add "Add to Home Screen"
 
 ### 🎯 Match Predictions & Betting
 - [ ] **Prediction System**
@@ -110,12 +113,13 @@
   - [ ] Optimize bundle size
 
 ### 📡 API Integration
-- [ ] **External Data Sources**
-  - [ ] Integrate with live football APIs
-  - [ ] Add automated data synchronization
-  - [ ] Implement data validation and cleaning
-  - [ ] Create data update scheduling
-  - [ ] Add API rate limiting and error handling
+- [ ] **External Data Sources & Scrapers (Pluggable Providers)**
+  - [ ] Provider abstraction: `Provider` interface (fetch competitions, fixtures, teams, players)
+  - [ ] API Provider (e.g., API‑Football) with key management and quotas
+  - [ ] Scraper Provider (headless, polite delays, anti‑bot headers)
+  - [ ] Normalization layer and ID‑mapping tables
+  - [ ] Scheduling: Spring `@Scheduled` + manual "Run now" from Admin UI
+  - [ ] Robust retries, backoff, and rate‑limit handling
 
 ---
 
@@ -136,6 +140,19 @@
   - [ ] Create user comments and ratings
   - [ ] Add social sharing features
   - [ ] Implement user-generated content
+
+### 🧰 Admin Source Manager (new)
+- [ ] **Sources module**
+  - [ ] CRUD: name, type (API|Scraper), base URL, keys, enabled, frequency, last run
+  - [ ] Mapping UI: link provider competition IDs → internal leagues
+  - [ ] Actions: Run now, Pause, Purge cache, View logs
+  - [ ] Run history table with status, counts, errors
+
+### ✍️ Editorial Tools (new)
+- [ ] **Moderation workflow**
+  - [ ] Draft → Review → Published states for leagues/teams/players/matches
+  - [ ] Audit log of changes and user actions
+  - [ ] Merge/dedupe utilities when providers conflict
 
 ### 📺 Media Management
 - [ ] **Rich Media Support**
@@ -164,6 +181,7 @@
   - [ ] Add end-to-end testing with Cypress
   - [ ] Create performance testing
   - [ ] Add accessibility testing
+  - [ ] Add contract tests for providers and normalization mapping
 
 ### 📝 Documentation
 - [ ] **Enhanced Documentation**
