@@ -41,11 +41,6 @@ spring:
       name: admin
       password: admin123
 
-# JWT Configuration
-jwt:
-  secret: kooora-secret-key-2024-very-long-and-secure-key-for-production
-  expiration: 86400000 # 24 hours in milliseconds
-
 # Server Configuration
 server:
   port: 8080
@@ -67,8 +62,8 @@ logging:
 # Application Configuration
 app:
   jwt:
-    secret: mySecretKeyThatNeedsToBeChangedInProduction!
-    expiration: 86400000  # 24 hours in milliseconds
+    secret: ${JWT_SECRET:kooora-secret-key-2024-very-long-and-secure-key-for-production-must-be-at-least-256-bits}
+    expiration: ${JWT_EXPIRATION:86400000}  # 24 hours in milliseconds
   upload:
     dir: uploads
     max-file-size: 5242880  # 5MB
@@ -77,6 +72,11 @@ app:
       public-key: # Add your VAPID public key here (generate using web-push library)
       private-key: # Add your VAPID private key here (keep secure)
       subject: mailto:admin@kooora.com
+
+# JWT Configuration (for backward compatibility)
+jwt:
+  secret: ${JWT_SECRET:kooora-secret-key-2024-very-long-and-secure-key-for-production-must-be-at-least-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
 
 # Actuator Configuration
 management:
@@ -95,8 +95,6 @@ external:
     football:
       url: https://api.football-data.org/v4
       key: # Add your API key here
-
-
 
 # Swagger Configuration
 springdoc:
