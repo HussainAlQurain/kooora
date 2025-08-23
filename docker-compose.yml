@@ -1,0 +1,114 @@
+# Docker Compose for Kooora Application - Development
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: kooora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kooora_dev
+      POSTGRES_USER: kooora_user
+      POSTGRES_PASSWORD: kooora_pass
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/db/migration:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - kooora-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kooora_user -d kooora_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: kooora-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kooora-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Application
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kooora-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: kooora_dev
+      DATABASE_USERNAME: kooora_user
+      DATABASE_PASSWORD: kooora_pass
+      JWT_SECRET: mySecretKeyForDevelopment123456789
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kooora-network
+    volumes:
+      - backend_logs:/var/log/kooora
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kooora-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - kooora-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  kooora-network:
+    driver: bridge

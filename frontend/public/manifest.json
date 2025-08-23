@@ -1,0 +1,95 @@
+{
+  "name": "Kooora - Football Live Scores & Analytics",
+  "short_name": "Kooora",
+  "description": "Your ultimate football companion with live scores, match predictions, player stats, and real-time updates",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["sports", "entertainment", "news"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Live Scores Dashboard"
+    },
+    {
+      "src": "/screenshots/mobile-1.png",
+      "sizes": "320x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Match Details"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Scores",
+      "short_name": "Scores",
+      "description": "View live football scores",
+      "url": "/matches",
+      "icons": [
+        {
+          "src": "/icons/shortcut-scores.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Leagues",
+      "short_name": "Leagues",
+      "description": "Browse football leagues",
+      "url": "/leagues",
+      "icons": [
+        {
+          "src": "/icons/shortcut-leagues.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Players",
+      "short_name": "Players",
+      "description": "Explore player statistics",
+      "url": "/players",
+      "icons": [
+        {
+          "src": "/icons/shortcut-players.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Search teams, players, and matches",
+      "url": "/search",
+      "icons": [
+        {
+          "src": "/icons/shortcut-search.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}

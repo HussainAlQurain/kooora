@@ -1,0 +1,354 @@
+package com.kooora.app.controller;
+
+import com.kooora.app.entity.*;
+import com.kooora.app.repository.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.*;
+
+/**
+ * REST controller for search functionality across all entities
+ * 
+ * @author Kooora Team
+ * @version 1.0.0
+ */
+@RestController
+@RequestMapping("/search")
+@Tag(name = "Search", description = "Universal search APIs for teams, players, leagues, and matches")
+@CrossOrigin(origins = "*")
+public class SearchController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
+
+    @Autowired
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private PlayerRepository playerRepository;
+
+    @Autowired
+    private LeagueRepository leagueRepository;
+
+    @Autowired
+    private MatchRepository matchRepository;
+
+    @Autowired
+    private CountryRepository countryRepository;
+
+    /**
+     * Universal search across all entities
+     */
+    @GetMapping("/all")
+    @Operation(summary = "Universal search", description = "Search across teams, players, leagues, and matches")
+    public ResponseEntity<Map<String, Object>> searchAll(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "5") int limit) {
+        
+        logger.info("Performing universal search for: {}", query);
+        
+        Map<String, Object> results = new HashMap<>();
+        
+        try {
+            // Search teams
+            List<Team> teams = teamRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(query, 
+                PageRequest.of(0, limit)).getContent();
+            results.put("teams", teams);
+            
+            // Search players
+            Page<Player> playersPage = playerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseAndIsActiveTrue(
+                query, query, PageRequest.of(0, limit));
+            List<Player> players = playersPage.getContent();
+            results.put("players", players);
+            
+            // Search leagues
+            List<League> leagues = leagueRepository.findByNameContaining(query);
+            results.put("leagues", leagues.size() > limit ? leagues.subList(0, limit) : leagues);
+            
+            // Search countries
+            List<Country> countries = countryRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(query);
+            results.put("countries", countries.size() > limit ? countries.subList(0, limit) : countries);
+            
+            // Calculate total results
+            int totalResults = teams.size() + players.size() + leagues.size() + countries.size();
+            results.put("totalResults", totalResults);
+            results.put("query", query);
+            
+            logger.info("Search completed. Found {} total results", totalResults);
+            
+        } catch (Exception e) {
+            logger.error("Error performing universal search", e);
+            results.put("error", "Search failed: " + e.getMessage());
+            results.put("totalResults", 0);
+        }
+        
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Search teams only
+     */
+    @GetMapping("/teams")
+    @Operation(summary = "Search teams", description = "Search for teams by name")
+    public ResponseEntity<Page<Team>> searchTeams(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : 
+            Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Team> teams = teamRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(query, pageable);
+        
+        logger.info("Team search for '{}' returned {} results", query, teams.getTotalElements());
+        
+        return ResponseEntity.ok(teams);
+    }
+
+    /**
+     * Search players only
+     */
+    @GetMapping("/players")
+    @Operation(summary = "Search players", description = "Search for players by name")
+    public ResponseEntity<Page<Player>> searchPlayers(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "lastName") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : 
+            Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Player> players = playerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseAndIsActiveTrue(
+            query, query, pageable);
+        
+        logger.info("Player search for '{}' returned {} results", query, players.getTotalElements());
+        
+        return ResponseEntity.ok(players);
+    }
+
+    /**
+     * Search leagues only
+     */
+    @GetMapping("/leagues")
+    @Operation(summary = "Search leagues", description = "Search for leagues by name")
+    public ResponseEntity<List<League>> searchLeagues(@RequestParam String query) {
+        List<League> leagues = leagueRepository.findByNameContaining(query);
+        
+        logger.info("League search for '{}' returned {} results", query, leagues.size());
+        
+        return ResponseEntity.ok(leagues);
+    }
+
+    /**
+     * Search by country
+     */
+    @GetMapping("/country")
+    @Operation(summary = "Search by country", description = "Search teams and players by country")
+    public ResponseEntity<Map<String, Object>> searchByCountry(
+            @RequestParam String countryName,
+            @RequestParam(defaultValue = "10") int limit) {
+        
+        Map<String, Object> results = new HashMap<>();
+        
+        try {
+            // Find country first
+            List<Country> countries = countryRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(countryName);
+            
+            if (!countries.isEmpty()) {
+                Country country = countries.get(0);
+                
+                // Find teams by country
+                List<Team> teams = teamRepository.findByCountryAndIsActiveTrue(country);
+                results.put("teams", teams.size() > limit ? teams.subList(0, limit) : teams);
+                
+                // Find players by country
+                List<Player> players = playerRepository.findByCountryAndIsActiveTrue(country);
+                results.put("players", players.size() > limit ? players.subList(0, limit) : players);
+                
+                // Find leagues by country
+                List<League> leagues = leagueRepository.findByCountryAndIsActiveTrue(country);
+                results.put("leagues", leagues);
+                
+                results.put("country", country);
+                results.put("totalResults", teams.size() + players.size() + leagues.size());
+            } else {
+                results.put("teams", new ArrayList<>());
+                results.put("players", new ArrayList<>());
+                results.put("leagues", new ArrayList<>());
+                results.put("totalResults", 0);
+                results.put("message", "Country not found: " + countryName);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error searching by country", e);
+            results.put("error", "Country search failed: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Search by position (for players)
+     */
+    @GetMapping("/players/position")
+    @Operation(summary = "Search players by position", description = "Search for players by their playing position")
+    public ResponseEntity<List<Player>> searchPlayersByPosition(
+            @RequestParam String position,
+            @RequestParam(defaultValue = "20") int limit) {
+        
+        List<Player> players = playerRepository.findByPositionContainingIgnoreCaseAndIsActiveTrue(position);
+        
+        // Limit results
+        if (players.size() > limit) {
+            players = players.subList(0, limit);
+        }
+        
+        logger.info("Position search for '{}' returned {} results", position, players.size());
+        
+        return ResponseEntity.ok(players);
+    }
+
+    /**
+     * Advanced search with filters
+     */
+    @GetMapping("/advanced")
+    @Operation(summary = "Advanced search", description = "Advanced search with multiple filters")
+    public ResponseEntity<Map<String, Object>> advancedSearch(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) String league,
+            @RequestParam(required = false) String position,
+            @RequestParam(defaultValue = "10") int limit) {
+        
+        Map<String, Object> results = new HashMap<>();
+        
+        try {
+            if ("teams".equalsIgnoreCase(entityType) || entityType == null) {
+                List<Team> teams = searchTeamsAdvanced(query, country, league, limit);
+                results.put("teams", teams);
+            }
+            
+            if ("players".equalsIgnoreCase(entityType) || entityType == null) {
+                List<Player> players = searchPlayersAdvanced(query, country, position, limit);
+                results.put("players", players);
+            }
+            
+            if ("leagues".equalsIgnoreCase(entityType) || entityType == null) {
+                List<League> leagues = searchLeaguesAdvanced(query, country, limit);
+                results.put("leagues", leagues);
+            }
+            
+            // Calculate total results
+            int totalResults = 0;
+            if (results.containsKey("teams")) totalResults += ((List<?>) results.get("teams")).size();
+            if (results.containsKey("players")) totalResults += ((List<?>) results.get("players")).size();
+            if (results.containsKey("leagues")) totalResults += ((List<?>) results.get("leagues")).size();
+            
+            results.put("totalResults", totalResults);
+            results.put("filters", Map.of(
+                "query", query != null ? query : "",
+                "entityType", entityType != null ? entityType : "all",
+                "country", country != null ? country : "",
+                "league", league != null ? league : "",
+                "position", position != null ? position : ""
+            ));
+            
+        } catch (Exception e) {
+            logger.error("Error performing advanced search", e);
+            results.put("error", "Advanced search failed: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Get search suggestions
+     */
+    @GetMapping("/suggestions")
+    @Operation(summary = "Get search suggestions", description = "Get search suggestions based on partial input")
+    public ResponseEntity<Map<String, List<String>>> getSearchSuggestions(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "5") int limit) {
+        
+        Map<String, List<String>> suggestions = new HashMap<>();
+        
+        try {
+            // Team name suggestions
+            List<Team> teams = teamRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(query, 
+                PageRequest.of(0, limit)).getContent();
+            suggestions.put("teams", teams.stream().map(Team::getName).toList());
+            
+            // Player name suggestions
+            Page<Player> playersPage = playerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseAndIsActiveTrue(
+                query, query, PageRequest.of(0, limit));
+            List<Player> players = playersPage.getContent();
+            suggestions.put("players", players.stream()
+                .map(p -> p.getFirstName() + " " + p.getLastName()).toList());
+            
+            // League name suggestions
+            List<League> leagues = leagueRepository.findByNameContaining(query);
+            suggestions.put("leagues", leagues.stream()
+                .limit(limit)
+                .map(League::getName).toList());
+            
+        } catch (Exception e) {
+            logger.error("Error getting search suggestions", e);
+        }
+        
+        return ResponseEntity.ok(suggestions);
+    }
+
+    // Helper methods for advanced search
+    private List<Team> searchTeamsAdvanced(String query, String country, String league, int limit) {
+        // This is a simplified implementation - in a real app you'd use Specifications or custom queries
+        List<Team> teams = teamRepository.findByIsActiveTrue();
+        
+        return teams.stream()
+            .filter(team -> query == null || team.getName().toLowerCase().contains(query.toLowerCase()))
+            .filter(team -> country == null || team.getCountry().getName().toLowerCase().contains(country.toLowerCase()))
+            .limit(limit)
+            .toList();
+    }
+    
+    private List<Player> searchPlayersAdvanced(String query, String country, String position, int limit) {
+        List<Player> players = playerRepository.findByIsActiveTrue(PageRequest.of(0, 100)).getContent();
+        
+        return players.stream()
+            .filter(player -> query == null || 
+                (player.getFirstName() + " " + player.getLastName()).toLowerCase().contains(query.toLowerCase()))
+            .filter(player -> country == null || 
+                player.getCountry().getName().toLowerCase().contains(country.toLowerCase()))
+            .filter(player -> position == null || 
+                (player.getPosition() != null && player.getPosition().toLowerCase().contains(position.toLowerCase())))
+            .limit(limit)
+            .toList();
+    }
+    
+    private List<League> searchLeaguesAdvanced(String query, String country, int limit) {
+        List<League> leagues = leagueRepository.findByIsActiveTrue();
+        
+        return leagues.stream()
+            .filter(league -> query == null || league.getName().toLowerCase().contains(query.toLowerCase()))
+            .filter(league -> country == null || league.getCountry().getName().toLowerCase().contains(country.toLowerCase()))
+            .limit(limit)
+            .toList();
+    }
+}
