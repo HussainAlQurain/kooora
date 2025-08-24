@@ -9,7 +9,7 @@ import {
   ChartBarIcon,
   StarIcon
 } from '@heroicons/react/24/outline'
-import LiveScoreWidget from '../components/LiveScoreWidget'
+import DynamicLiveScoreWidget from '../components/DynamicLiveScoreWidget'
 import Link from 'next/link'
 
 interface Country {
@@ -194,7 +194,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="max-w-4xl mx-auto">
-            <LiveScoreWidget autoRefresh={true} showDetails={true} />
+            <DynamicLiveScoreWidget autoRefresh={true} showDetails={true} />
           </div>
         </div>
       </div>

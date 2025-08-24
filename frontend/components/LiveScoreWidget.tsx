@@ -76,6 +76,9 @@ export default function LiveScoreWidget({
   useEffect(() => {
     fetchLiveMatches()
     
+    // Only setup WebSocket subscriptions on client side
+    if (typeof window === 'undefined') return
+    
     // Subscribe to real-time match updates
     const unsubscribeMatchesTopic = '/topic/matches'
     const unsubscribeMatches = webSocketClient.subscribe(unsubscribeMatchesTopic, (update: any) => {

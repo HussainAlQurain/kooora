@@ -3,8 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import Navigation from '../components/Navigation'
-import PWAManager from '../components/PWAManager'
 import { AuthProvider } from '../contexts/AuthContext'
+import SWReset from '../components/SWReset'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -93,12 +93,13 @@ export default function RootLayout({
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body className={inter.className}>
+        <SWReset />
         <AuthProvider>
           <div className="min-h-screen bg-gray-50">
             <Navigation />
             {children}
           </div>
-          <PWAManager />
+
           <Toaster 
             position="top-right"
             toastOptions={{

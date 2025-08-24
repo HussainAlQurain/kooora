@@ -32,6 +32,9 @@ export default function PWAManager() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default')
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     // Check if app is already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                          (window.navigator as any).standalone || 

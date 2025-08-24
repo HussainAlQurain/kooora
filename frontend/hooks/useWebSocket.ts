@@ -20,6 +20,9 @@ export function useWebSocketConnection() {
   });
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     const handleConnectionChange = (connected: boolean) => {
       setState(prev => ({
         ...prev,

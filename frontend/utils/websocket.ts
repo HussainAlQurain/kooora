@@ -68,7 +68,11 @@ class KoooraWebSocket {
       : (typeof window !== 'undefined'
           ? `${window.location.origin}/api`
           : 'http://localhost:8080/api');
-    this.setupClient();
+    
+    // Only setup client on the client side to prevent SSR issues
+    if (typeof window !== 'undefined') {
+      this.setupClient();
+    }
   }
 
   private setupClient(): void {
@@ -151,6 +155,12 @@ class KoooraWebSocket {
    */
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Ensure we're on the client side
+      if (typeof window === 'undefined') {
+        reject(new Error('WebSocket can only be used on the client side'));
+        return;
+      }
+
       if (!this.client) {
         this.setupClient();
       }
@@ -411,7 +421,72 @@ class KoooraWebSocket {
   }
 }
 
-// Create singleton instance
-export const webSocketClient = new KoooraWebSocket();
+// Create singleton instance only on client side with lazy initialization
+let webSocketClientInstance: KoooraWebSocket | null = null;
+
+export const webSocketClient = {
+  getInstance(): KoooraWebSocket {
+    if (typeof window === 'undefined') {
+      // Return a mock object for server-side rendering
+      return {
+        connect: () => Promise.resolve(),
+        disconnect: () => {},
+        isConnected: () => false,
+        subscribe: () => null,
+        unsubscribe: () => {},
+        send: () => {},
+        joinMatch: () => {},
+        leaveMatch: () => {},
+        sendChatMessage: () => {},
+        subscribeToLeague: () => {},
+        subscribeToPlayer: () => {},
+        submitPrediction: () => {},
+        sendReaction: () => {},
+        ping: () => {},
+        onConnectionChange: () => {},
+        removeConnectionListener: () => {},
+        getStatus: () => ({ connected: false, reconnectAttempts: 0 }),
+        subscribeToMatchUpdates: () => null,
+        subscribeToMatchEvents: () => null,
+        subscribeToMatchChat: () => null,
+        subscribeToAllMatches: () => null,
+        subscribeToAllEvents: () => null,
+        subscribeToNotifications: () => null,
+        subscribeToSystem: () => null,
+      } as any;
+    }
+    
+    if (!webSocketClientInstance) {
+      webSocketClientInstance = new KoooraWebSocket();
+    }
+    return webSocketClientInstance;
+  },
+  
+  // Proxy all methods to the getInstance()
+  connect: () => webSocketClient.getInstance().connect(),
+  disconnect: () => webSocketClient.getInstance().disconnect(),
+  isConnected: () => webSocketClient.getInstance().isConnected(),
+  subscribe: (topic: string, handler: (message: any) => void) => webSocketClient.getInstance().subscribe(topic, handler),
+  unsubscribe: (topic: string) => webSocketClient.getInstance().unsubscribe(topic),
+  send: (destination: string, body: any) => webSocketClient.getInstance().send(destination, body),
+  joinMatch: (matchId: number, username: string) => webSocketClient.getInstance().joinMatch(matchId, username),
+  leaveMatch: () => webSocketClient.getInstance().leaveMatch(),
+  sendChatMessage: (matchId: number, message: string) => webSocketClient.getInstance().sendChatMessage(matchId, message),
+  subscribeToLeague: (leagueId: number, username: string) => webSocketClient.getInstance().subscribeToLeague(leagueId, username),
+  subscribeToPlayer: (playerId: number, username: string) => webSocketClient.getInstance().subscribeToPlayer(playerId, username),
+  submitPrediction: (matchId: number, prediction: string, type: string) => webSocketClient.getInstance().submitPrediction(matchId, prediction, type),
+  sendReaction: (matchId: number, emoji: string, eventId?: string) => webSocketClient.getInstance().sendReaction(matchId, emoji, eventId),
+  ping: () => webSocketClient.getInstance().ping(),
+  onConnectionChange: (listener: (connected: boolean) => void) => webSocketClient.getInstance().onConnectionChange(listener),
+  removeConnectionListener: (listener: (connected: boolean) => void) => webSocketClient.getInstance().removeConnectionListener(listener),
+  getStatus: () => webSocketClient.getInstance().getStatus(),
+  subscribeToMatchUpdates: (matchId: number, handler: (message: any) => void) => webSocketClient.getInstance().subscribeToMatchUpdates(matchId, handler),
+  subscribeToMatchEvents: (matchId: number, handler: (message: any) => void) => webSocketClient.getInstance().subscribeToMatchEvents(matchId, handler),
+  subscribeToMatchChat: (handler: (message: any) => void) => webSocketClient.getInstance().subscribeToMatchChat(handler),
+  subscribeToAllMatches: (handler: (message: any) => void) => webSocketClient.getInstance().subscribeToAllMatches(handler),
+  subscribeToAllEvents: (handler: (message: any) => void) => webSocketClient.getInstance().subscribeToAllEvents(handler),
+  subscribeToNotifications: (handler: (message: any) => void) => webSocketClient.getInstance().subscribeToNotifications(handler),
+  subscribeToSystem: (handler: (message: any) => void) => webSocketClient.getInstance().subscribeToSystem(handler),
+};
 
 export default KoooraWebSocket;
